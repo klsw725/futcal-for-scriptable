@@ -1,11 +1,11 @@
-// Variables used by Scriptable.
-// These must be at the very top of the file. Do not edit.
-// icon-color: deep-green; icon-glyph: futbol;
 
 // Widget customisation
 const defaultSettings = {
-    teamId: "9768",
-    timeZone: "Europe/London",
+
+    //teamId: 8586,
+    teamId: args.widgetParameter,
+        
+    timeZone: "Asia/Seoul",
 
     language: "system",
 
@@ -81,7 +81,7 @@ const dictionary = getDictionary(language)[1];
 
 // Define FotMob API URLs
 const baseApiUrl = encodeURI("https://www.fotmob.com");
-const teamDataApiUrl = encodeURI(`${baseApiUrl}/api/teams?id=${userSettings.teamId}&tab=overview&type=team&timeZone=${userSettings.timeZone}`);
+const teamDataApiUrl = encodeURI(`${baseApiUrl}/api/teams?id=${userSettings.teamId}&timezone=${userSettings.timeZone}`);
 const matchDetailsApiUrl = encodeURI(`${baseApiUrl}/api/matchDetails?matchId=`);
 
 // Get team data
@@ -92,7 +92,7 @@ const teamTapUrl = encodeURI(`${baseApiUrl}/teams/${userSettings.teamId}/overvie
 const teamMatchesTapUrl = encodeURI(`${baseApiUrl}/teams/${userSettings.teamId}/fixtures`);
 let leagueTableTapUrl;
 if (teamData && teamData.table) {
-    const leagueOverviewUrl = encodeURI(`${baseApiUrl}${teamData.table[0].pageUrl}`);
+    const leagueOverviewUrl = encodeURI(`${baseApiUrl}${teamData.table[0].data.pageUrl}`);
     leagueTableTapUrl = leagueOverviewUrl.replace("overview", "table");
 }
 
@@ -162,18 +162,18 @@ async function createWidget() {
 
 // Create matches view
 async function addWidgetMatches(globalStack) {
-    const nextMatch = teamData.nextMatch;
+    const nextMatch = teamData.overview.nextMatch;
 
-    let previousMatchIndex = teamData.fixtures.length - 1;
+    let previousMatchIndex = teamData.fixtures.allFixtures.fixtures.length - 1;
     if (nextMatch) {
-      for (let i = 0; i < teamData.fixtures.length; i += 1) {
-          if (teamData.fixtures[i].id === nextMatch.id) {
+      for (let i = 0; i < teamData.fixtures.allFixtures.fixtures.length; i += 1) {
+          if (teamData.fixtures.allFixtures.fixtures[i].id === nextMatch.id) {
               previousMatchIndex = i - 1;
               break;
           }
       }
     }
-    const previousMatch = teamData.fixtures[previousMatchIndex];
+    const previousMatch = teamData.fixtures.allFixtures.fixtures[previousMatchIndex];
 
     const matchesStack = globalStack.addStack();
     matchesStack.url = teamMatchesTapUrl;
@@ -199,7 +199,7 @@ async function addWidgetMatch(matchesStack, match, title) {
     if (match != undefined) {
         const matchTapUrl = encodeURI(`${baseApiUrl}${match.pageUrl}`);
         matchStack.url = matchTapUrl;
-        const matchDetailsUrl = `${matchDetailsApiUrl}${match.id}`;
+        const matchDetailsUrl = `${matchDetailsApiUrl}${match.id}&timezone=${userSettings.timeZone}`;
         const matchDetailsOffline = `match${title}.json`;
         const matchDetails = await getData(matchDetailsUrl, matchDetailsOffline);
 
@@ -335,26 +335,26 @@ async function addWidgetTable(stack) {
   const leagueStack = stack.addStack();
   leagueStack.layoutVertically();
   if(teamData.table) {
-    let isSingleTable = teamData.table[0].table;
+    let isSingleTable = teamData.table.length;
     let leagueTable;
-    let leagueTitle = teamData.table[0].leagueName;
+    let leagueTitle = teamData.table[0].data.leagueName;
     let leagueSubtitle;
     // If league table is not found assume it is a special case with more than one table available
-    if (isSingleTable) {
-      leagueTable = teamData.table[0].table.all;
+    if (isSingleTable == 1) {
+      leagueTable = teamData.table[0].data.table.all;
     }
     else {
         let teamFound;
-        let tableIndex = 0;
-        for (let i = 0; i < teamData.table[0].tables.length; i += 1) {
-            teamFound = (teamData.table[0].tables[i].table.all).findIndex(obj => obj.id == teamData.details.id);
+        let tableIndex = 0;		
+        for (let i = 0; i < teamData.table.length; i += 1) {
+            teamFound = (teamData.table[i].data.table.all).findIndex(obj => obj.id == teamData.details.id);
             if (teamFound != -1) {
                 tableIndex = i;
                 break;
             }
         }
-        leagueTable = teamData.table[0].tables[tableIndex].table.all;
-        leagueSubtitle = teamData.table[0].tables[tableIndex].leagueName;
+        leagueTable = teamData.table[tableIndex].data.table.all;
+        leagueSubtitle = teamData.table[tableIndex].data.leagueName;
         leagueSubtitle = leagueSubtitle.startsWith("- ") ? leagueSubtitle.substring(2) : leagueSubtitle;
     }
     // Get team position in league
