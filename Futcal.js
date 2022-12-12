@@ -584,10 +584,10 @@ const defaultSettings = {
         minutes = minutes < 10 ? `0${minutes}` : minutes;
         let time;
         if (userSettings.matchesTwelveHourClock) {
-            const ampm = hours >= 12 ? "pm" : "am";
+            const ampm = hours >= 12 ? "P.M." : "A.M.";
             hours = hours % 12;
             hours = hours ? hours : 12; // the hour '0' should be '12'
-            time = `${hours}:${minutes}${ampm}`;
+            time = `${hours}:${minutes} ${ampm}`;
         } else {
             time = `${hours}:${minutes}`;
         }
